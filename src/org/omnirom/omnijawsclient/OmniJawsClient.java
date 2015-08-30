@@ -94,7 +94,7 @@ public class OmniJawsClient {
 
     public OmniJawsClient(Context context) {
         mContext = context;
-        mContext.getContentResolver().registerContentObserver(WEATHER_URI, true, mContentObserver);
+        mContext.getContentResolver().registerContentObserver(WEATHER_URI, false, mContentObserver);
         queryWeather();
     }
 

@@ -18,19 +18,22 @@
 package org.omnirom.omnijawsclient;
 
 import android.app.Activity;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.ProgressBar;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 
 public class MainActivity extends Activity {
     private TextView mTextView;
     private OmniJawsClient mClient;
+    private ImageView mCurrent;
+    private ImageView mForcast1;
+    private ImageView mForcast2;
+    private ImageView mForcast3;
+    private ImageView mForcast4;
+    private ImageView mForcast5;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,6 +41,12 @@ public class MainActivity extends Activity {
         mClient = new OmniJawsClient(this);
         setContentView(R.layout.activity_main);
         mTextView = (TextView) findViewById(R.id.textView);
+        mCurrent = (ImageView) findViewById(R.id.current_weather);
+        mForcast1 = (ImageView) findViewById(R.id.forcast_day1);
+        mForcast2 = (ImageView) findViewById(R.id.forcast_day2);
+        mForcast3 = (ImageView) findViewById(R.id.forcast_day3);
+        mForcast4 = (ImageView) findViewById(R.id.forcast_day4);
+        mForcast5 = (ImageView) findViewById(R.id.forcast_day5);
     }
     
     public void onUpdatePressed(View v) {
@@ -52,11 +61,29 @@ public class MainActivity extends Activity {
         OmniJawsClient.WeatherInfo data = mClient.getWeatherInfo();
         if (data != null) {
             mTextView.setText(data.toString());
+            mCurrent.setImageResource(getWeatherIconResource(data.conditionCode));
+            mForcast1.setImageResource(getWeatherIconResource(data.forecasts.get(0).conditionCode));
+            mForcast2.setImageResource(getWeatherIconResource(data.forecasts.get(1).conditionCode));
+            mForcast3.setImageResource(getWeatherIconResource(data.forecasts.get(2).conditionCode));
+            mForcast4.setImageResource(getWeatherIconResource(data.forecasts.get(3).conditionCode));
+            mForcast5.setImageResource(getWeatherIconResource(data.forecasts.get(4).conditionCode));
         }
     }
     @Override
     protected void onResume() {
         super.onResume();
         update();
+    }
+
+    private int getWeatherIconResource(int conditionCode) {
+        final Resources res = getResources();
+        final int resId = res.getIdentifier("weather_color_" + conditionCode,
+                "drawable", getPackageName());
+
+        if (resId != 0) {
+            return resId;
+        }
+
+        return R.drawable.weather_na;
     }
 }
