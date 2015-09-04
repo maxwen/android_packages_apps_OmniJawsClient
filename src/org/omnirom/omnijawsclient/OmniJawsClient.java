@@ -46,7 +46,8 @@ public class OmniJawsClient {
             "forecast_high",
             "forecast_condition",
             "forecast_condition_code",
-            "time_stamp"
+            "time_stamp",
+            "forecast_date"
     };
 
     public static class WeatherInfo {
@@ -65,13 +66,14 @@ public class OmniJawsClient {
     }
         
     public static class DayForecast {
-        public float low;
-        public float high;
+        public String low;
+        public String high;
         public int conditionCode;
         public String condition;
+        public String date;
         
         public String toString() {
-            return "[" + low + ":" + high + ":" +conditionCode + ":" + condition + "]";
+            return "[" + low + ":" + high + ":" +conditionCode + ":" + condition + ":" + date + "]";
         }
     }
 
@@ -138,10 +140,11 @@ public class OmniJawsClient {
                         mCachedInfo.timeStamp = c.getString(10);
                     } else {
                         DayForecast day = new DayForecast();
-                        day.low = c.getFloat(6);
-                        day.high = c.getFloat(7);
+                        day.low = c.getString(6);
+                        day.high = c.getString(7);
                         day.condition = c.getString(8);
                         day.conditionCode = c.getInt(9);
+                        day.date = c.getString(11);
                         forecastList.add(day);
                     }
                 }
