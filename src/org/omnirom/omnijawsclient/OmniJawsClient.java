@@ -22,6 +22,8 @@ import java.util.List;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.Uri;
@@ -31,7 +33,7 @@ import android.util.Log;
 public class OmniJawsClient {
     private static final String TAG = "WeatherService:OmniJawsClient";
     private static final String BROADCAST_INTENT = "org.omnirom.omnijaws.BROADCAST_INTENT";
-
+    public static final String SERVICE_PACKAGE = "org.omnirom.omnijaws";
     public static final Uri WEATHER_URI
             = Uri.parse("content://org.omnirom.omnijaws.provider/weather");
 
@@ -64,7 +66,7 @@ public class OmniJawsClient {
             return city + ":" + timeStamp + ": " + wind + ":" +conditionCode + ":" + temp + ":" + humidity + ":" + condition + ":" + forecasts;
         }
     }
-        
+
     public static class DayForecast {
         public String low;
         public String high;
@@ -81,6 +83,7 @@ public class OmniJawsClient {
     private Handler mHandler = new Handler();
     private WeatherContentObserver mContentObserver = new WeatherContentObserver(mHandler);
     private WeatherInfo mCachedInfo;
+    private boolean mEnabled;
 
     private final class WeatherContentObserver extends ContentObserver {
         WeatherContentObserver(Handler handler) {
@@ -96,22 +99,29 @@ public class OmniJawsClient {
 
     public OmniJawsClient(Context context) {
         mContext = context;
-        mContext.getContentResolver().registerContentObserver(WEATHER_URI, false, mContentObserver);
-        queryWeather();
+        mEnabled = isOmniJawsServiceInstalled();
+        if (mEnabled) {
+            mContext.getContentResolver().registerContentObserver(WEATHER_URI, false, mContentObserver);
+            queryWeather();
+        }
     }
 
     public void forceUpdate() {
-        Intent updateIntent = new Intent(Intent.ACTION_MAIN)
-                .setClassName("org.omnirom.omnijaws", "org.omnirom.omnijaws.WeatherService");
-        updateIntent.setAction("org.omnirom.omnijaws.ACTION_UPDATE");
-        updateIntent.putExtra("force", true);
-        mContext.startService(updateIntent);
+        if (mEnabled) {
+            Intent updateIntent = new Intent(Intent.ACTION_MAIN)
+                    .setClassName("org.omnirom.omnijaws", "org.omnirom.omnijaws.WeatherService");
+            updateIntent.setAction("org.omnirom.omnijaws.ACTION_UPDATE");
+            updateIntent.putExtra("force", true);
+            mContext.startService(updateIntent);
+        }
     }
 
     public void startSettings() {
-        Intent settings = new Intent(Intent.ACTION_MAIN)
-                .setClassName("org.omnirom.omnijaws", "org.omnirom.omnijaws.SettingsActivity");
-        mContext.startActivity(settings);
+        if (mEnabled) {
+            Intent settings = new Intent(Intent.ACTION_MAIN)
+                    .setClassName("org.omnirom.omnijaws", "org.omnirom.omnijaws.SettingsActivity");
+            mContext.startActivity(settings);
+        }
     }
 
     public WeatherInfo getWeatherInfo() {
@@ -153,6 +163,18 @@ public class OmniJawsClient {
                 c.close();
             }
             Log.d(TAG, "queryWeather " + mCachedInfo);
+        }
+    }
+
+    private boolean isOmniJawsServiceInstalled() {
+        final PackageManager pm = mContext.getPackageManager();
+        try {
+            pm.getPackageInfo(SERVICE_PACKAGE, PackageManager.GET_ACTIVITIES);
+            int enabled = pm.getApplicationEnabledSetting(SERVICE_PACKAGE);
+            return enabled != PackageManager.COMPONENT_ENABLED_STATE_DISABLED &&
+                enabled != PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER;
+        } catch (NameNotFoundException e) {
+            return false;
         }
     }
 }

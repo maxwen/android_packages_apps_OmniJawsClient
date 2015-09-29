@@ -238,7 +238,9 @@ public class MainActivity extends Activity {
 
     private int getBgImageForCondition(int conditionCode) {
         switch(conditionCode) {
+        case 31:
         case 32:
+        case 33:
         case 34:
         case 36:
             return R.drawable.bg_clear;
@@ -275,6 +277,11 @@ public class MainActivity extends Activity {
         case 45:
         case 47:
             return R.drawable.bg_storm;
+        case 19:
+        case 20:
+        case 21:
+        case 22:
+            return R.drawable.bg_fog;
         }
         return R.drawable.bg_clouds;
     }
