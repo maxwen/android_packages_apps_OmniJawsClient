@@ -24,8 +24,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.content.res.Resources;
 import android.database.ContentObserver;
 import android.database.Cursor;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Handler;
 import android.util.Log;
@@ -36,6 +38,7 @@ public class OmniJawsClient {
     public static final String SERVICE_PACKAGE = "org.omnirom.omnijaws";
     public static final Uri WEATHER_URI
             = Uri.parse("content://org.omnirom.omnijaws.provider/weather");
+    private static final String ICON_PACKAGE_DEFAULT = "org.omnirom.omnijaws";
 
     public static final String[] WEATHER_PROJECTION = new String[]{
             "city",
@@ -84,6 +87,9 @@ public class OmniJawsClient {
     private WeatherContentObserver mContentObserver = new WeatherContentObserver(mHandler);
     private WeatherInfo mCachedInfo;
     private boolean mEnabled;
+    private Resources mRes;
+    private String mPackageName;
+    private String mSettingHeaderPackage;
 
     private final class WeatherContentObserver extends ContentObserver {
         WeatherContentObserver(Handler handler) {
@@ -101,6 +107,7 @@ public class OmniJawsClient {
         mContext = context;
         mEnabled = isOmniJawsServiceInstalled();
         if (mEnabled) {
+            loadDefaultIconsPackage();
             mContext.getContentResolver().registerContentObserver(WEATHER_URI, false, mContentObserver);
             queryWeather();
         }
@@ -129,12 +136,12 @@ public class OmniJawsClient {
     }
 
     private void queryWeather() {
-        mCachedInfo = new WeatherInfo();
         Cursor c = mContext.getContentResolver().query(WEATHER_URI, WEATHER_PROJECTION,
                 null, null, null);
         if (c != null) {
             Log.d(TAG, "queryWeather " + WEATHER_URI);
             try {
+                mCachedInfo = new WeatherInfo();
                 int count = c.getCount();
                 List<DayForecast> forecastList = new ArrayList<DayForecast>();
                 int i = 0;
@@ -159,11 +166,46 @@ public class OmniJawsClient {
                     }
                 }
                 mCachedInfo.forecasts = forecastList;
+                Log.d(TAG, "queryWeather " + mCachedInfo);
             } finally {
                 c.close();
             }
-            Log.d(TAG, "queryWeather " + mCachedInfo);
         }
+    }
+
+    private void loadDefaultIconsPackage() {
+        Log.i(TAG, "Load default header pack");
+        mPackageName = ICON_PACKAGE_DEFAULT;
+        mSettingHeaderPackage = mPackageName;
+        try {
+            PackageManager packageManager = mContext.getPackageManager();
+            mRes = packageManager.getResourcesForApplication(mPackageName);
+        } catch (Exception e) {
+            mRes = null;
+        }
+        if (mRes == null) {
+            Log.w(TAG, "No default package found");
+        }
+    }
+
+    private int getWeatherImageResource(int conditionCode) {
+        if (mRes != null) {
+            int resId = mRes.getIdentifier("weather_" + conditionCode, "drawable", mPackageName);
+            if (resId != 0) {
+                return resId;
+            }
+            resId = mRes.getIdentifier("weather_na", "drawable", mPackageName);
+            if (resId != 0) {
+                return resId;
+            }
+        }
+        // last resort
+        return R.drawable.weather_na;
+    }
+
+    public Drawable getWeatherConditionImage(int conditionCode) {
+        int resId = getWeatherImageResource(conditionCode);
+        return mRes.getDrawable(resId);
     }
 
     private boolean isOmniJawsServiceInstalled() {

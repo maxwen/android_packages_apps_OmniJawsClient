@@ -181,21 +181,8 @@ public class MainActivity extends Activity {
         update();
     }
 
-    private int getWeatherIconResource(int conditionCode) {
-        final Resources res = getResources();
-        final int resId = res.getIdentifier("weather_color_" + conditionCode,
-                "drawable", getPackageName());
-
-        if (resId != 0) {
-            return resId;
-        }
-
-        return R.drawable.weather_na;
-    }
-
     private Drawable getWeatherImage(int conditionCode, String min, String max) {
-        int resId = getWeatherIconResource(conditionCode);
-        Drawable weatherImage = getResources().getDrawable(resId);
+        Drawable weatherImage = mClient.getWeatherConditionImage(conditionCode);
         Drawable d = overlay(getResources(), weatherImage, min, max);
         return d;
     }
